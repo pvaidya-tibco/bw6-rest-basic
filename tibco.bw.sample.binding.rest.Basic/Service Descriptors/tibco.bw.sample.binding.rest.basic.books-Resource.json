@@ -1,0 +1,100 @@
+{
+  "swagger" : "2.0",
+  "info" : {
+    "version" : "1.0",
+    "title" : "Resource",
+    "description" : "Resource service"
+  },
+  "host" : "localhost:8080",
+  "basePath" : "/",
+  "schemes" : [ "http" ],
+  "paths" : {
+    "/books" : {
+      "post" : {
+        "summary" : "postResource",
+        "description" : "postResource",
+        "operationId" : "post-books",
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "parameters" : [ {
+          "name" : "body",
+          "in" : "body",
+          "description" : "",
+          "schema" : {
+            "$ref" : "#/definitions/Books"
+          },
+          "required" : true
+        } ],
+        "responses" : {
+          "200" : {
+            "description" : "a Books to be returned",
+            "schema" : {
+              "$ref" : "#/definitions/Books"
+            }
+          }
+        }
+      },
+      "get" : {
+        "summary" : "getResource",
+        "description" : "getResource",
+        "operationId" : "get-books",
+        "consumes" : [ "application/json" ],
+        "produces" : [ "application/json" ],
+        "parameters" : [ ],
+        "responses" : {
+          "200" : {
+            "description" : "a Books to be returned",
+            "schema" : {
+              "$ref" : "#/definitions/Books"
+            }
+          }
+        }
+      }
+    }
+  },
+  "definitions" : {
+    "Book" : {
+      "type" : "object",
+      "properties" : {
+        "isbn" : {
+          "type" : "string"
+        },
+        "name" : {
+          "type" : "string"
+        },
+        "description" : {
+          "type" : "string"
+        },
+        "authorName" : {
+          "type" : "string"
+        },
+        "releaseDate" : {
+          "type" : "string",
+          "format" : "date"
+        },
+        "vintage" : {
+          "type" : "boolean"
+        },
+        "signed" : {
+          "type" : "boolean"
+        },
+        "price" : {
+          "type" : "number",
+          "format" : "float"
+        }
+      }
+    },
+    "Books" : {
+      "type" : "object",
+      "properties" : {
+        "Book" : {
+          "type" : "array",
+          "items" : {
+            "$ref" : "#/definitions/Book",
+            "uniqueItems" : false
+          }
+        }
+      }
+    }
+  }
+}

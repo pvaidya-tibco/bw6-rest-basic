@@ -1,0 +1,113 @@
+name: BW6 Build and Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  TIBCO_HOME: C:\bw612
+
+jobs:
+
+  build-and-deploy-dev:
+    name: "Build + Deploy to DEV"
+    runs-on: self-hosted
+    environment: dev
+
+    steps:
+
+      - name: "Step 1 - Checkout source"
+        uses: actions/checkout@v4
+
+      - name: "Step 2 - Build EAR and Deploy to DEV"
+        shell: pwsh
+        env:
+          JAVA_HOME: C:\bw612\tibcojre64\17
+        run: |
+          $env:PATH = "C:\bw612\tibcojre64\17\bin;$env:PATH"
+          & "C:\apache-maven-3.9.8\bin\mvn.cmd" bw6:bwdeploy `
+            --batch-mode `
+            --no-transfer-progress `
+            -f tibco.bw.sample.binding.rest.Basic.application/pom.xml `
+            -DagentHost="${{ vars.BWAGENT_HOST }}" `
+            -DagentPort="${{ vars.BWAGENT_PORT }}" `
+            -DagentSSL=false `
+            -DdeployToAdmin=true `
+            -Ddomain="${{ vars.BW_DOMAIN }}" `
+            -DappSpace="${{ vars.BW_APPSPACE }}" `
+            -DappNode="${{ vars.BW_APPNODE }}" `
+            -DhttpPort="${{ vars.BW_APPNODE_HTTP_PORT }}" `
+            -Dredeploy=true `
+            -DrestartAppNode=false `
+            "-Dprofile=WindowsProfileDev.substvar" `
+            "-DappNodeConfig_bw.rest.docApi.port_value=${{ vars.BW_DOC_API_PORT }}"
+
+      - name: "Step 3 - Verify DEV application is Running"
+        shell: pwsh
+        run: |
+          $uri = "http://${{ vars.BWAGENT_HOST }}:${{ vars.BWAGENT_PORT }}/bw/v1/domains/${{ vars.BW_DOMAIN }}/appspaces/${{ vars.BW_APPSPACE }}/applications/tibco.bw.sample.binding.rest.Basic.application/1.0/status"
+          $response = Invoke-RestMethod -Uri $uri -TimeoutSec 30
+          Write-Host "Application state: $($response.state)"
+          if ($response.state -eq "Running") {
+            Write-Host "Application is Running"
+          } else {
+            Write-Error "Application NOT in Running state: $($response.state)"
+            exit 1
+          }
+
+      - name: "Step 4 - Upload EAR as workflow artifact"
+        uses: actions/upload-artifact@v4
+        with:
+          name: bw6-ear-${{ github.sha }}
+          path: tibco.bw.sample.binding.rest.Basic.application/target/*.ear
+          if-no-files-found: error
+          retention-days: 7
+
+
+  deploy-prod:
+    name: "Deploy to PROD"
+    needs: build-and-deploy-dev
+    runs-on: self-hosted
+    environment: prod
+
+    steps:
+
+      - name: "Step 1 - Checkout source"
+        uses: actions/checkout@v4
+
+      - name: "Step 2 - Build EAR and Deploy to PROD"
+        shell: pwsh
+        env:
+          JAVA_HOME: C:\bw612\tibcojre64\17
+        run: |
+          $env:PATH = "C:\bw612\tibcojre64\17\bin;$env:PATH"
+          & "C:\apache-maven-3.9.8\bin\mvn.cmd" bw6:bwdeploy `
+            --batch-mode `
+            --no-transfer-progress `
+            -f tibco.bw.sample.binding.rest.Basic.application/pom.xml `
+            -DagentHost="${{ vars.BWAGENT_HOST }}" `
+            -DagentPort="${{ vars.BWAGENT_PORT }}" `
+            -DagentSSL=false `
+            -DdeployToAdmin=true `
+            -Ddomain="${{ vars.BW_DOMAIN }}" `
+            -DappSpace="${{ vars.BW_APPSPACE }}" `
+            -DappNode="${{ vars.BW_APPNODE }}" `
+            -DhttpPort="${{ vars.BW_APPNODE_HTTP_PORT }}" `
+            -Dredeploy=true `
+            -DrestartAppNode=true `
+            "-Dprofile=WindowsProfileProd.substvar" `
+            "-DappNodeConfig_bw.rest.docApi.port_value=${{ vars.BW_DOC_API_PORT }}"
+
+      - name: "Step 3 - Verify PROD application is Running"
+        shell: pwsh
+        run: |
+          $uri = "http://${{ vars.BWAGENT_HOST }}:${{ vars.BWAGENT_PORT }}/bw/v1/domains/${{ vars.BW_DOMAIN }}/appspaces/${{ vars.BW_APPSPACE }}/applications/tibco.bw.sample.binding.rest.Basic.application/1.0/status"
+          $response = Invoke-RestMethod -Uri $uri -TimeoutSec 30
+          Write-Host "Application state: $($response.state)"
+          if ($response.state -eq "Running") {
+            Write-Host "PROD Application is Running"
+          } else {
+            Write-Error "PROD Application NOT in Running state: $($response.state)"
+            exit 1
+          }

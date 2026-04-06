@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sca:composite xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:BW="http://xsd.tns.tibco.com/amf/models/sca/implementationtype/BW" xmlns:XMLSchema="http://www.w3.org/2001/XMLSchema" xmlns:compositeext="http://schemas.tibco.com/amx/3.0/compositeext" xmlns:rest="http://xsd.tns.tibco.com/bw/models/binding/rest" xmlns:sca="http://www.osoa.org/xmlns/sca/1.0" xmlns:scact="http://xsd.tns.tibco.com/amf/models/sca/componentType" xmlns:scaext="http://xsd.tns.tibco.com/amf/models/sca/extensions" xmi:id="_zNpT0EiIEeSTfvLt9h2MXQ" targetNamespace="http://tns.tibco.com/bw/composite/tibco.bw.sample.binding.rest.Basic" name="tibco.bw.sample.binding.rest.Basic" compositeext:version="1.0.0" compositeext:description="Using Basic Rest Binding" compositeext:formatVersion="2">
+  <sca:service xmi:id="_u2dSMIYkEe-Brf2g5j4NkQ" name="books" promote="ComponentResource/books">
+    <sca:interface.wsdl xmi:id="_u2uX8IYkEe-Brf2g5j4NkQ" interface="http://xmlns.example.com/20241009152619PLT#wsdl.interface(books)" scaext:wsdlLocation="../Processes/tibco/bw/sample/binding/rest/basic/Resource.bwp"/>
+    <scaext:binding xsi:type="rest:RestServiceBinding" xmi:id="_u3OHMIYkEe-Brf2g5j4NkQ" name="RestService" path="/books" docBasePath="http://localhost:7777/tibco.bw.sample.binding.rest.Basic" docResourcePath="Resource" basePath="/" connector="tibco.bw.sample.binding.rest.basic.books" structuredData="true" technologyVersion="2.0" implementation="Service Descriptors/tibco.bw.sample.binding.rest.basic.Resource-Resource.json">
+      <operation xmi:id="_u3o98IYkEe-Brf2g5j4NkQ" operationName="post" nickname="post-books" httpMethod="POST" notes="postResource" responseStyle="element" requestStyle="element" outputPartName="item">
+        <clientFormat>json</clientFormat>
+        <clientRequestFormat>json</clientRequestFormat>
+      </operation>
+      <operation xmi:id="_u3o98YYkEe-Brf2g5j4NkQ" operationName="get" nickname="get-books" httpMethod="GET" notes="getResource" responseStyle="element" requestStyle="element" outputPartName="item">
+        <clientFormat>json</clientFormat>
+        <clientRequestFormat>json</clientRequestFormat>
+      </operation>
+      <advancedConfig xmi:id="_u3OHMYYkEe-Brf2g5j4NkQ" blockingQueueSize="8192"/>
+    </scaext:binding>
+    <scact:bindingAdjunct xmi:id="_u3o98oYkEe-Brf2g5j4NkQ" bindingName="RestService"/>
+  </sca:service>
+  <sca:property xmi:id="_0F2HIEiIEeSTfvLt9h2MXQ" name="BW.APPNODE.NAME" type="XMLSchema:string" scalable="true"/>
+  <sca:property xmi:id="_0GWdcEiIEeSTfvLt9h2MXQ" name="BW.DOMAIN.NAME" type="XMLSchema:string" scalable="true"/>
+  <sca:property xmi:id="_0GY5sEiIEeSTfvLt9h2MXQ" name="BW.HOST.NAME" type="XMLSchema:string" scalable="true"/>
+  <sca:property xmi:id="_0GbV8EiIEeSTfvLt9h2MXQ" name="BW.MODULE.VERSION" type="XMLSchema:string" scalable="true"/>
+  <sca:property xmi:id="_0GdLIEiIEeSTfvLt9h2MXQ" name="BW.DEPLOYMENTUNIT.NAME" type="XMLSchema:string" scalable="true"/>
+  <sca:property xmi:id="_0GfnYEiIEeSTfvLt9h2MXQ" name="BW.DEPLOYMENTUNIT.VERSION" type="XMLSchema:string" scalable="true"/>
+  <sca:property xmi:id="_0GhckEiIEeSTfvLt9h2MXQ" name="BW.APPSPACE.NAME" type="XMLSchema:string" scalable="true"/>
+  <sca:property xmi:id="_0HQcYEiIEeSTfvLt9h2MXQ" name="BW.DEPLOYMENTUNIT.TYPE" type="XMLSchema:string" scalable="true"/>
+  <sca:property xmi:id="_0HRqgEiIEeSTfvLt9h2MXQ" name="BW.MODULE.NAME" type="XMLSchema:string" scalable="true"/>
+  <sca:property xmi:id="_q60skEiJEeSTfvLt9h2MXQ" name="Output_File" type="XMLSchema:string" scaext:simpleValue="" publicAccess="true" scalable="true"/>
+  <sca:property xmi:id="_rh2a4EiKEeSTfvLt9h2MXQ" name="Input_File" type="XMLSchema:string" publicAccess="true" scalable="true"/>
+  <sca:property xmi:id="_uR7V0EiKEeSTfvLt9h2MXQ" name="Output_File_1" type="XMLSchema:string" publicAccess="true" scalable="true"/>
+  <sca:property xmi:id="_Srz48EiLEeSTfvLt9h2MXQ" name="PORT" type="XMLSchema:int" scaext:simpleValue="0" publicAccess="true" scalable="true"/>
+  <sca:property xmi:id="_TjS6kEiLEeSTfvLt9h2MXQ" name="HOST" type="XMLSchema:string" publicAccess="true" scalable="true"/>
+  <sca:component xmi:id="_nfQdQEiMEeSTfvLt9h2MXQ" name="ComponentClient" compositeext:version="1.0.0.qualifier">
+    <scaext:implementation xsi:type="BW:BWComponentImplementation" xmi:id="_nfQdQUiMEeSTfvLt9h2MXQ" processName="tibco.bw.sample.binding.rest.basic.Client"/>
+  </sca:component>
+  <sca:component xmi:id="_u2GF0IYkEe-Brf2g5j4NkQ" name="ComponentResource" compositeext:version="1.0.0.qualifier">
+    <scaext:implementation xsi:type="BW:BWComponentImplementation" xmi:id="_u2GF0YYkEe-Brf2g5j4NkQ" processName="tibco.bw.sample.binding.rest.basic.books"/>
+    <sca:service xmi:id="_u2STEIYkEe-Brf2g5j4NkQ" name="books">
+      <sca:interface.wsdl xmi:id="_u2Zn0IYkEe-Brf2g5j4NkQ" interface="http://xmlns.example.com/20241009152619PLT#wsdl.interface(books)" scaext:wsdlLocation="../Processes/tibco/bw/sample/binding/rest/basic/Resource.bwp"/>
+    </sca:service>
+  </sca:component>
+  <sca:component xmi:id="_io-1cIY0Ee-Brf2g5j4NkQ" name="ComponentRest_Invoke_Client" compositeext:version="1.0.0.qualifier">
+    <scaext:implementation xsi:type="BW:BWComponentImplementation" xmi:id="_io_cgIY0Ee-Brf2g5j4NkQ" processName="tibco.bw.sample.binding.rest.basic.Rest_Invoke_Client"/>
+  </sca:component>
+</sca:composite>

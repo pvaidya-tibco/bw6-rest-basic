@@ -1,0 +1,13 @@
+﻿# Maven build output
+target/
+*.ear
+*.jar
+
+# TIBCO Studio metadata
+.metadata/
+.recommenders/
+RemoteSystemsTempFiles/
+
+# Windows
+Thumbs.db
+Desktop.ini

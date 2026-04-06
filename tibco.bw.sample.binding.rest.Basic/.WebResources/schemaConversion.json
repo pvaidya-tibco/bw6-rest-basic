@@ -1,0 +1,5 @@
+{"records": [{
+    "jsonSchemaLocation": "/tibco.bw.sample.binding.rest.Basic/Service Descriptors/tibco.bw.sample.binding.rest.basic.books-Resource.json",
+    "conversionType": "generated",
+    "xsdSchemaTargetNamespace": "/T1728986017817Converted/JsonSchema"
+}]}

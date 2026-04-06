@@ -1,0 +1,21 @@
+{
+    "records": [{
+        "name": "Cloud",
+        "items": [],
+        "url": "https://integration.cloud.tibco.com:443"
+    }],
+    "resources": [
+        {
+            "location": ".WebResources/docs.json",
+            "type": "generated"
+        },
+        {
+            "location": ".WebResources/books",
+            "type": "generated"
+        },
+        {
+            "location": "Service Descriptors/tibco.bw.sample.binding.rest.basic.books-Resource.json",
+            "type": "generated"
+        }
+    ]
+}
