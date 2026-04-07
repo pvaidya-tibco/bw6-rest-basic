@@ -15,73 +15,58 @@ jobs:
   build-and-deploy-dev:
     name: "Build + Deploy to DEV"
     runs-on: self-hosted
-    environment: dev
+    environment: dev  # Pulls variables from the 'dev' environment
 
     steps:
       - name: "Step 1 - Pre-cleanup Git safe directory"
         shell: pwsh
-        run: |
-          git config --global --add safe.directory '*'
+        run: git config --global --add safe.directory '*'
 
       - name: "Step 2 - Checkout source"
         uses: actions/checkout@v4
         with:
-          persist-credentials: false
           path: .
 
-      - name: "Step 3 - Clear Maven cached resolution failures"
+      - name: "Step 3 - Clear Maven cache"
         shell: pwsh
         run: |
           $repoPath = "${{ env.MAVEN_REPO }}/com/tibco"
           if (Test-Path $repoPath) {
             Get-ChildItem $repoPath -Recurse -Filter "*.lastUpdated" | Remove-Item -Force
-            Write-Host "Cleared stale Maven cache markers in $repoPath"
           }
 
       - name: "Step 4 - Build EAR and Deploy to DEV"
         shell: pwsh
-        env:
-          BW_PROFILE: WindowsProfileDev.substvar
-          BWAGENT_HOST: guwdspwpvaidy01
-          BWAGENT_PORT: 8079
-          BW_DOMAIN: DevDomain
-          BW_APPSPACE: DevAppSpace
-          BW_APPNODE: DevAppNode
-          BW_APPNODE_HTTP_PORT: 1530
-          BW_DOC_API_PORT: 7777
         run: |
           $env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
-          $mvnRepo = $env:MAVEN_REPO
+          
+          # Map GitHub environment variables to local PS variables
+          $agentPort = [int]"${{ vars.BWAGENT_PORT }}".Trim()
+          $httpPort  = [int]"${{ vars.BW_APPNODE_HTTP_PORT }}".Trim()
+          $docApiPort = [int]"${{ vars.BW_DOC_API_PORT }}".Trim()
 
-          # Convert to Int and Trim to ensure clean numeric values
-          $agentPort = [int]"$env:BWAGENT_PORT".Trim()
-          $httpPort  = [int]"$env:BW_APPNODE_HTTP_PORT".Trim()
-          $docApiPort = [int]"$env:BW_DOC_API_PORT".Trim()
-
-          # Using double quotes around the entire property string to prevent "Unknown lifecycle phase"
           & 'C:\apache-maven-3.9.8\bin\mvn.cmd' bw6:bwdeploy `
-            -U `
-            --batch-mode `
-            --no-transfer-progress `
-            "-Dmaven.repo.local=$mvnRepo" `
+            -U --batch-mode --no-transfer-progress `
+            "-Dmaven.repo.local=$env:MAVEN_REPO" `
             -f 'tibco.bw.sample.binding.rest.Basic.application/pom.xml' `
-            "-DagentHost=$env:BWAGENT_HOST" `
+            "-DagentHost=${{ vars.BWAGENT_HOST }}" `
             "-DagentPort=$agentPort" `
             -DagentSSL=false `
             -DdeployToAdmin=true `
-            "-Ddomain=$env:BW_DOMAIN" `
-            "-DappSpace=$env:BW_APPSPACE" `
-            "-DappNode=$env:BW_APPNODE" `
+            "-Ddomain=${{ vars.BW_DOMAIN }}" `
+            "-DappSpace=${{ vars.BW_APPSPACE }}" `
+            "-DappNode=${{ vars.BW_APPNODE }}" `
             "-DhttpPort=$httpPort" `
             -Dredeploy=true `
             -DrestartAppNode=false `
-            "-Dprofile=$env:BW_PROFILE" `
+            "-Dprofile=WindowsProfileDev.substvar" `
             "-DappNodeConfig_bw.rest.docApi.port_value=$docApiPort"
 
       - name: "Step 5 - Verify DEV application is Running"
         shell: pwsh
         run: |
-          $uri = "http://${{ env.BWAGENT_HOST }}:${{ env.BWAGENT_PORT }}/bw/v1/domains/${{ env.BW_DOMAIN }}/appspaces/${{ env.BW_APPSPACE }}/applications/tibco.bw.sample.binding.rest.Basic.application/1.0/status"
+          $uri = "http://${{ vars.BWAGENT_HOST }}:${{ vars.BWAGENT_PORT }}/bw/v1/domains/${{ vars.BW_DOMAIN }}/appspaces/${{ vars.BW_APPSPACE }}/applications/tibco.bw.sample.binding.rest.Basic.application/1.0/status"
+          Write-Host "Checking URI: $uri"
           $response = Invoke-RestMethod -Uri $uri -TimeoutSec 30
           Write-Host "Application state: $($response.state)"
           if ($response.state -eq "Running") {
@@ -91,33 +76,29 @@ jobs:
             exit 1
           }
 
-      - name: "Step 6 - Upload EAR as workflow artifact"
+      - name: "Step 6 - Upload EAR"
         uses: actions/upload-artifact@v4
         with:
           name: bw6-ear-${{ github.sha }}
           path: tibco.bw.sample.binding.rest.Basic.application/target/*.ear
-          if-no-files-found: error
-          retention-days: 7
 
   deploy-prod:
     name: "Deploy to PROD"
     needs: build-and-deploy-dev
     runs-on: self-hosted
-    environment: prod
+    environment: prod  # Pulls variables from the 'prod' environment
 
     steps:
-      - name: "Step 1 - Pre-cleanup Git safe directory"
+      - name: "Step 1 - Pre-cleanup"
         shell: pwsh
-        run: |
-          git config --global --add safe.directory '*'
+        run: git config --global --add safe.directory '*'
 
-      - name: "Step 2 - Checkout source"
+      - name: "Step 2 - Checkout"
         uses: actions/checkout@v4
         with:
-          persist-credentials: false
           path: .
 
-      - name: "Step 3 - Clear Maven cached resolution failures"
+      - name: "Step 3 - Clear Maven cache"
         shell: pwsh
         run: |
           $repoPath = "${{ env.MAVEN_REPO }}/com/tibco"
@@ -127,46 +108,35 @@ jobs:
 
       - name: "Step 4 - Build EAR and Deploy to PROD"
         shell: pwsh
-        env:
-          BW_PROFILE: WindowsProfileProd.substvar
-          BWAGENT_HOST: guwdspwpvaidy01
-          BWAGENT_PORT: 8079
-          BW_DOMAIN: ProdDomain
-          BW_APPSPACE: ProdAppSpace
-          BW_APPNODE: ProdAppNode
-          BW_APPNODE_HTTP_PORT: 1530
-          BW_DOC_API_PORT: 7777
         run: |
           $env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
-          $mvnRepo = $env:MAVEN_REPO
-
-          $agentPort = [int]"$env:BWAGENT_PORT".Trim()
-          $httpPort  = [int]"$env:BW_APPNODE_HTTP_PORT".Trim()
-          $docApiPort = [int]"$env:BW_DOC_API_PORT".Trim()
+          
+          # Map GitHub environment variables to local PS variables
+          $agentPort = [int]"${{ vars.BWAGENT_PORT }}".Trim()
+          $httpPort  = [int]"${{ vars.BW_APPNODE_HTTP_PORT }}".Trim()
+          $docApiPort = [int]"${{ vars.BW_DOC_API_PORT }}".Trim()
 
           & 'C:\apache-maven-3.9.8\bin\mvn.cmd' bw6:bwdeploy `
-            -U `
-            --batch-mode `
-            --no-transfer-progress `
-            "-Dmaven.repo.local=$mvnRepo" `
+            -U --batch-mode --no-transfer-progress `
+            "-Dmaven.repo.local=$env:MAVEN_REPO" `
             -f 'tibco.bw.sample.binding.rest.Basic.application/pom.xml' `
-            "-DagentHost=$env:BWAGENT_HOST" `
+            "-DagentHost=${{ vars.BWAGENT_HOST }}" `
             "-DagentPort=$agentPort" `
             -DagentSSL=false `
             -DdeployToAdmin=true `
-            "-Ddomain=$env:BW_DOMAIN" `
-            "-DappSpace=$env:BW_APPSPACE" `
-            "-DappNode=$env:BW_APPNODE" `
+            "-Ddomain=${{ vars.BW_DOMAIN }}" `
+            "-DappSpace=${{ vars.BW_APPSPACE }}" `
+            "-DappNode=${{ vars.BW_APPNODE }}" `
             "-DhttpPort=$httpPort" `
             -Dredeploy=true `
             -DrestartAppNode=true `
-            "-Dprofile=$env:BW_PROFILE" `
+            "-Dprofile=WindowsProfileProd.substvar" `
             "-DappNodeConfig_bw.rest.docApi.port_value=$docApiPort"
 
       - name: "Step 5 - Verify PROD application is Running"
         shell: pwsh
         run: |
-          $uri = "http://${{ env.BWAGENT_HOST }}:${{ env.BWAGENT_PORT }}/bw/v1/domains/${{ env.BW_DOMAIN }}/appspaces/${{ env.BW_APPSPACE }}/applications/tibco.bw.sample.binding.rest.Basic.application/1.0/status"
+          $uri = "http://${{ vars.BWAGENT_HOST }}:${{ vars.BWAGENT_PORT }}/bw/v1/domains/${{ vars.BW_DOMAIN }}/appspaces/${{ vars.BW_APPSPACE }}/applications/tibco.bw.sample.binding.rest.Basic.application/1.0/status"
           $response = Invoke-RestMethod -Uri $uri -TimeoutSec 30
           Write-Host "Application state: $($response.state)"
           if ($response.state -eq "Running") {
