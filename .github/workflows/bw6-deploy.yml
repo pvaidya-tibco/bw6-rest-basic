@@ -14,7 +14,7 @@ jobs:
   build-and-deploy-dev:
     name: "Build + Deploy to DEV"
     runs-on: self-hosted
-    environment: dev
+    environment: dev   # ensures GitHub environment variables for 'dev' are loaded
 
     steps:
       - name: "Debug: Runner and Env Variables"
@@ -61,6 +61,13 @@ jobs:
         shell: pwsh
         env:
           JAVA_HOME: C:\bw612\tibcojre64\17
+          BWAGENT_HOST: ${{ vars.BWAGENT_HOST }}
+          BWAGENT_PORT: ${{ vars.BWAGENT_PORT }}
+          BW_DOMAIN: ${{ vars.BW_DOMAIN }}
+          BW_APPSPACE: ${{ vars.BW_APPSPACE }}
+          BW_APPNODE: ${{ vars.BW_APPNODE }}
+          BW_APPNODE_HTTP_PORT: ${{ vars.BW_APPNODE_HTTP_PORT }}
+          BW_DOC_API_PORT: ${{ vars.BW_DOC_API_PORT }}
         run: |
           $env:PATH = "C:\bw612\tibcojre64\17\bin;$env:PATH"
           $mvnCmd = "C:\apache-maven-3.9.8\bin\mvn.cmd"
