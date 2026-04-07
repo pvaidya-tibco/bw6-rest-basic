@@ -8,7 +8,7 @@ on:
 
 env:
   TIBCO_HOME: C:\bw612
-  MAVEN_REPO: "C:/Users/pvaidya/.m2/repository"  # Use your existing Maven repo
+  MAVEN_REPO: "C:/Users/pvaidya/.m2/repository"  # Existing Maven repo
 
 jobs:
   build-and-deploy-dev:
@@ -64,26 +64,26 @@ jobs:
             -U `
             --batch-mode `
             --no-transfer-progress `
-            -Dmaven.repo.local="$env:MAVEN_REPO" `
+            -Dmaven.repo.local=$env:MAVEN_REPO `
             -f tibco.bw.sample.binding.rest.Basic.application/pom.xml `
-            -DagentHost="${{ vars.BWAGENT_HOST }}" `
-            -DagentPort="${{ vars.BWAGENT_PORT }}" `
+            -DagentHost=$env:BWAGENT_HOST `
+            -DagentPort=$env:BWAGENT_PORT `
             -DagentSSL=false `
             -DdeployToAdmin=true `
-            -Ddomain="${{ vars.BW_DOMAIN }}" `
-            -DappSpace="${{ vars.BW_APPSPACE }}" `
-            -DappNode="${{ vars.BW_APPNODE }}" `
-            -DhttpPort="${{ vars.BW_APPNODE_HTTP_PORT }}" `
+            -Ddomain=$env:BW_DOMAIN `
+            -DappSpace=$env:BW_APPSPACE `
+            -DappNode=$env:BW_APPNODE `
+            -DhttpPort=$env:BW_APPNODE_HTTP_PORT `
             -Dredeploy=true `
             -DrestartAppNode=false `
             "-Dprofile=WindowsProfile.substvar" `
-            "-DappNodeConfig_bw.rest.docApi.port_value=${{ vars.BW_DOC_API_PORT }}"
+            "-DappNodeConfig_bw.rest.docApi.port_value=$env:BW_DOC_API_PORT"
 
       # Step 5 - Verify DEV application is Running
       - name: "Step 5 - Verify DEV application is Running"
         shell: pwsh
         run: |
-          $uri = "http://${{ vars.BWAGENT_HOST }}:${{ vars.BWAGENT_PORT }}/bw/v1/domains/${{ vars.BW_DOMAIN }}/appspaces/${{ vars.BW_APPSPACE }}/applications/tibco.bw.sample.binding.rest.Basic.application/1.0/status"
+          $uri = "http://$env:BWAGENT_HOST:$env:BWAGENT_PORT/bw/v1/domains/$env:BW_DOMAIN/appspaces/$env:BW_APPSPACE/applications/tibco.bw.sample.binding.rest.Basic.application/1.0/status"
           $response = Invoke-RestMethod -Uri $uri -TimeoutSec 30
           Write-Host "Application state: $($response.state)"
           if ($response.state -eq "Running") {
@@ -93,11 +93,11 @@ jobs:
             exit 1
           }
 
-      # Step 6 - Upload EAR  as workflow artifact
+      # Step 6 - Upload EAR as workflow artifact
       - name: "Step 6 - Upload EAR as workflow artifact"
         uses: actions/upload-artifact@v4
         with:
-          name: bw6-ear-${{ github.sha }}
+          name: bw6-ear-$env:GITHUB_SHA
           path: tibco.bw.sample.binding.rest.Basic.application/target/*.ear
           if-no-files-found: error
           retention-days: 7
