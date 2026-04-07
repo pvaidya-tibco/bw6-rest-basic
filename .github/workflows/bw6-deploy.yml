@@ -8,7 +8,7 @@ on:
 
 env:
   TIBCO_HOME: C:\bw612
-  MAVEN_REPO: C:/Users/pvaidya/.m2/repository
+  MAVEN_REPO: "C:/Users/pvaidya/.m2/repository"
 
 jobs:
   build-and-deploy-dev:
@@ -42,13 +42,24 @@ jobs:
         env:
           JAVA_HOME: C:\bw612\tibcojre64\17
           BW_PROFILE: WindowsProfileDev.substvar
+          BWAGENT_HOST: guwdspwpvaidy01
+          BWAGENT_PORT: 8079
+          BW_DOMAIN: DevDomain
+          BW_APPSPACE: DevAppSpace
+          BW_APPNODE: DevAppNode
+          BW_APPNODE_HTTP_PORT: 1530
+          BW_DOC_API_PORT: 7777
         run: |
           $env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
+
+          # Ensure Maven local repo is safely quoted
+          $mvnRepo = "`"$env:MAVEN_REPO`""
+
           & "C:\apache-maven-3.9.8\bin\mvn.cmd" bw6:bwdeploy `
             -U `
             --batch-mode `
             --no-transfer-progress `
-            -Dmaven.repo.local=$env:MAVEN_REPO `
+            -Dmaven.repo.local=$mvnRepo `
             -f tibco.bw.sample.binding.rest.Basic.application/pom.xml `
             -DagentHost=$env:BWAGENT_HOST `
             -DagentPort=$env:BWAGENT_PORT `
@@ -115,13 +126,22 @@ jobs:
         env:
           JAVA_HOME: C:\bw612\tibcojre64\17
           BW_PROFILE: WindowsProfileProd.substvar
+          BWAGENT_HOST: guwdspwpvaidy01
+          BWAGENT_PORT: 8079
+          BW_DOMAIN: DevDomain
+          BW_APPSPACE: DevAppSpace
+          BW_APPNODE: DevAppNode
+          BW_APPNODE_HTTP_PORT: 1530
+          BW_DOC_API_PORT: 7777
         run: |
           $env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
+          $mvnRepo = "`"$env:MAVEN_REPO`""
+
           & "C:\apache-maven-3.9.8\bin\mvn.cmd" bw6:bwdeploy `
             -U `
             --batch-mode `
             --no-transfer-progress `
-            -Dmaven.repo.local=$env:MAVEN_REPO `
+            -Dmaven.repo.local=$mvnRepo `
             -f tibco.bw.sample.binding.rest.Basic.application/pom.xml `
             -DagentHost=$env:BWAGENT_HOST `
             -DagentPort=$env:BWAGENT_PORT `
