@@ -17,6 +17,13 @@ jobs:
 
     steps:
 
+      # Step 0: Mark Git repo as safe (before checkout)
+      - name: "Mark Git repo as safe"
+        shell: pwsh
+        run: |
+          $repoPath = "${{ github.workspace }}"
+          git config --global --add safe.directory "$repoPath"
+
       - name: "Step 1 - Checkout source"
         uses: actions/checkout@v4
 
@@ -72,6 +79,13 @@ jobs:
     environment: prod
 
     steps:
+
+      # Step 0: Mark Git repo as safe (before checkout)
+      - name: "Mark Git repo as safe"
+        shell: pwsh
+        run: |
+          $repoPath = "${{ github.workspace }}"
+          git config --global --add safe.directory "$repoPath"
 
       - name: "Step 1 - Checkout source"
         uses: actions/checkout@v4
