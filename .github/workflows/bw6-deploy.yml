@@ -17,16 +17,16 @@ jobs:
 
     steps:
 
-      # Step 0: Mark Git repo as safe (before checkout)
-      - name: "Mark Git repo as safe"
-        shell: pwsh
-        run: |
-          $repoPath = "${{ github.workspace }}"
-          git config --global --add safe.directory "$repoPath"
-
-      - name: "Step 1 - Checkout source"
+      # Step 1 - Checkout repository safely
+      - name: "Step 1 - Checkout source safely"
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          path: .
+        run: |
+          git config --global --add safe.directory "${{ github.workspace }}"
 
+      # Step 2 - Build EAR and Deploy to DEV
       - name: "Step 2 - Build EAR and Deploy to DEV"
         shell: pwsh
         env:
@@ -50,6 +50,7 @@ jobs:
             "-Dprofile=WindowsProfile.substvar" `
             "-DappNodeConfig_bw.rest.docApi.port_value=${{ vars.BW_DOC_API_PORT }}"
 
+      # Step 3 - Verify DEV application is Running
       - name: "Step 3 - Verify DEV application is Running"
         shell: pwsh
         run: |
@@ -63,6 +64,7 @@ jobs:
             exit 1
           }
 
+      # Step 4 - Upload EAR as workflow artifact
       - name: "Step 4 - Upload EAR as workflow artifact"
         uses: actions/upload-artifact@v4
         with:
@@ -80,16 +82,16 @@ jobs:
 
     steps:
 
-      # Step 0: Mark Git repo as safe (before checkout)
-      - name: "Mark Git repo as safe"
-        shell: pwsh
-        run: |
-          $repoPath = "${{ github.workspace }}"
-          git config --global --add safe.directory "$repoPath"
-
-      - name: "Step 1 - Checkout source"
+      # Step 1 - Checkout repository safely
+      - name: "Step 1 - Checkout source safely"
         uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          path: .
+        run: |
+          git config --global --add safe.directory "${{ github.workspace }}"
 
+      # Step 2 - Build EAR and Deploy to PROD
       - name: "Step 2 - Build EAR and Deploy to PROD"
         shell: pwsh
         env:
@@ -113,6 +115,7 @@ jobs:
             "-Dprofile=WindowsProfile.substvar" `
             "-DappNodeConfig_bw.rest.docApi.port_value=${{ vars.BW_DOC_API_PORT }}"
 
+      # Step 3 - Verify PROD application is Running
       - name: "Step 3 - Verify PROD application is Running"
         shell: pwsh
         run: |
@@ -124,4 +127,3 @@ jobs:
           } else {
             Write-Error "PROD Application NOT in Running state. Current state: $($response.state)"
             exit 1
-          }
