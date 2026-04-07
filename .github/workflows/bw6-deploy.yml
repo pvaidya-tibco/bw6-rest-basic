@@ -18,14 +18,14 @@ jobs:
     environment: dev
 
     steps:
-      # Step 1 - Fix Git Ownership
+      # Step 1 - Fix Git Ownership BEFORE Checkout
       - name: "Pre-cleanup Git safe directory"
         shell: pwsh
         run: |
           git config --global --add safe.directory '*'
 
-      # Step 2 - Checkout source
-      - name: "Checkout repository"
+      # Step 2 - Checkout repository
+      - name: "Checkout source"
         uses: actions/checkout@v4
         with:
           persist-credentials: false
@@ -63,31 +63,33 @@ jobs:
             "-Dmaven.repo.local=$mvnRepo" `
             -f 'tibco.bw.sample.binding.rest.Basic.application/pom.xml' `
             -DagentHost=$env:BWAGENT_HOST `
-            -DagentPort=$env:BWAGENT_PORT `
+            -DagentPort=[int]$env:BWAGENT_PORT `
             -DagentSSL=false `
             -DdeployToAdmin=true `
             -Ddomain=$env:BW_DOMAIN `
             -DappSpace=$env:BW_APPSPACE `
             -DappNode=$env:BW_APPNODE `
-            -DhttpPort=$env:BW_APPNODE_HTTP_PORT `
+            -DhttpPort=[int]$env:BW_APPNODE_HTTP_PORT `
             -Dredeploy=true `
             -DrestartAppNode=false `
             "-Dprofile=$env:BW_PROFILE" `
-            "-DappNodeConfig_bw.rest.docApi.port_value=$env:BW_DOC_API_PORT"
+            "-DappNodeConfig_bw.rest.docApi.port_value=[int]$env:BW_DOC_API_PORT"
 
-      # Step 5 - Verify DEV application is running
-      - name: "Verify DEV application is running"
+      # Step 5 - Verify DEV application is Running
+      - name: "Verify DEV application is Running"
         shell: pwsh
         run: |
-          $uri = "http://$env:BWAGENT_HOST:$env:BWAGENT_PORT/bw/v1/domains/$env:BW_DOMAIN/appspaces/$env:BW_APPSPACE/applications/tibco.bw.sample.binding.rest.Basic.application/1.0/status"
+          $uri = "http://${{ env.BWAGENT_HOST }}:${{ env.BWAGENT_PORT }}/bw/v1/domains/${{ env.BW_DOMAIN }}/appspaces/${{ env.BW_APPSPACE }}/applications/tibco.bw.sample.binding.rest.Basic.application/1.0/status"
           $response = Invoke-RestMethod -Uri $uri -TimeoutSec 30
           Write-Host "Application state: $($response.state)"
-          if ($response.state -ne "Running") {
+          if ($response.state -eq "Running") {
+            Write-Host "Application is Running"
+          } else {
             Write-Error "Application NOT in Running state. Current state: $($response.state)"
             exit 1
           }
 
-      # Step 6 - Upload EAR as artifact
+      # Step 6 - Upload EAR as workflow artifact
       - name: "Upload EAR as workflow artifact"
         uses: actions/upload-artifact@v4
         with:
@@ -143,25 +145,27 @@ jobs:
             "-Dmaven.repo.local=$mvnRepo" `
             -f 'tibco.bw.sample.binding.rest.Basic.application/pom.xml' `
             -DagentHost=$env:BWAGENT_HOST `
-            -DagentPort=$env:BWAGENT_PORT `
+            -DagentPort=[int]$env:BWAGENT_PORT `
             -DagentSSL=false `
             -DdeployToAdmin=true `
             -Ddomain=$env:BW_DOMAIN `
             -DappSpace=$env:BW_APPSPACE `
             -DappNode=$env:BW_APPNODE `
-            -DhttpPort=$env:BW_APPNODE_HTTP_PORT `
+            -DhttpPort=[int]$env:BW_APPNODE_HTTP_PORT `
             -Dredeploy=true `
             -DrestartAppNode=true `
             "-Dprofile=$env:BW_PROFILE" `
-            "-DappNodeConfig_bw.rest.docApi.port_value=$env:BW_DOC_API_PORT"
+            "-DappNodeConfig_bw.rest.docApi.port_value=[int]$env:BW_DOC_API_PORT"
 
-      - name: "Verify PROD application is running"
+      - name: "Verify PROD application is Running"
         shell: pwsh
         run: |
-          $uri = "http://$env:BWAGENT_HOST:$env:BWAGENT_PORT/bw/v1/domains/$env:BW_DOMAIN/appspaces/$env:BW_APPSPACE/applications/tibco.bw.sample.binding.rest.Basic.application/1.0/status"
+          $uri = "http://${{ env.BWAGENT_HOST }}:${{ env.BWAGENT_PORT }}/bw/v1/domains/${{ env.BW_DOMAIN }}/appspaces/${{ env.BW_APPSPACE }}/applications/tibco.bw.sample.binding.rest.Basic.application/1.0/status"
           $response = Invoke-RestMethod -Uri $uri -TimeoutSec 30
           Write-Host "Application state: $($response.state)"
-          if ($response.state -ne "Running") {
+          if ($response.state -eq "Running") {
+            Write-Host "PROD Application is Running"
+          } else {
             Write-Error "PROD Application NOT in Running state. Current state: $($response.state)"
             exit 1
           }
