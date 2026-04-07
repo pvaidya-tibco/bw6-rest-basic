@@ -20,23 +20,7 @@ jobs:
       - name: "Step 1 - Checkout source"
         uses: actions/checkout@v4
 
-<<<<<<< HEAD
       - name: "Step 2 - Build EAR and Deploy to DEV"
-=======
-      - name: "Step 2 - Configure Maven to use user local repository"
-        shell: pwsh
-        run: |
-          $settingsDir = "$env:USERPROFILE\.m2"
-          New-Item -ItemType Directory -Force -Path $settingsDir | Out-Null
-          @"
-           <settings>
-           <localRepository>C:/Users/pvaidya/.m2/repository</localRepository>
-           </settings>
-          "@ | Set-Content "$settingsDir\settings.xml"
-          Write-Host "Maven settings.xml written, localRepository set to C:/Users/pvaidya/.m2/repository"
-
-      - name: "Step 3 - Build EAR and Deploy to DEV"
->>>>>>> c798369038bee22b7021ec17d30a6e32d261726b
         shell: pwsh
         env:
           JAVA_HOME: C:\bw612\tibcojre64\17
