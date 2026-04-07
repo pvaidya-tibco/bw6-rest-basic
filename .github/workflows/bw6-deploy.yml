@@ -13,26 +13,26 @@ env:
 
 jobs:
   build-and-deploy-dev:
-    name: Build + Deploy to DEV
+    name: "Build + Deploy to DEV"
     runs-on: self-hosted
     environment: dev
 
     steps:
       # Step 1 - Fix Git Ownership
-      - name: Pre-cleanup Git safe directory
+      - name: "Pre-cleanup Git safe directory"
         shell: pwsh
         run: |
           git config --global --add safe.directory '*'
 
-      # Step 2 - Checkout repository
-      - name: Checkout source
+      # Step 2 - Checkout source
+      - name: "Checkout repository"
         uses: actions/checkout@v4
         with:
           persist-credentials: false
           path: .
 
       # Step 3 - Clear Maven cached resolution failures
-      - name: Clear Maven cached resolution failures
+      - name: "Clear Maven cached resolution failures"
         shell: pwsh
         run: |
           $repoPath = "${{ env.MAVEN_REPO }}/com/tibco"
@@ -42,7 +42,7 @@ jobs:
           }
 
       # Step 4 - Build EAR and Deploy to DEV
-      - name: Build EAR and Deploy to DEV
+      - name: "Build EAR and Deploy to DEV"
         shell: pwsh
         env:
           BW_PROFILE: WindowsProfileDev.substvar
@@ -60,7 +60,7 @@ jobs:
             -U `
             --batch-mode `
             --no-transfer-progress `
-            -Dmaven.repo.local="$mvnRepo" `
+            "-Dmaven.repo.local=$mvnRepo" `
             -f 'tibco.bw.sample.binding.rest.Basic.application/pom.xml' `
             -DagentHost=$env:BWAGENT_HOST `
             -DagentPort=$env:BWAGENT_PORT `
@@ -76,10 +76,10 @@ jobs:
             "-DappNodeConfig_bw.rest.docApi.port_value=$env:BW_DOC_API_PORT"
 
       # Step 5 - Verify DEV application is running
-      - name: Verify DEV application is Running
+      - name: "Verify DEV application is running"
         shell: pwsh
         run: |
-          $uri = "http://${{ env.BWAGENT_HOST }}:${{ env.BWAGENT_PORT }}/bw/v1/domains/${{ env.BW_DOMAIN }}/appspaces/${{ env.BW_APPSPACE }}/applications/tibco.bw.sample.binding.rest.Basic.application/1.0/status"
+          $uri = "http://$env:BWAGENT_HOST:$env:BWAGENT_PORT/bw/v1/domains/$env:BW_DOMAIN/appspaces/$env:BW_APPSPACE/applications/tibco.bw.sample.binding.rest.Basic.application/1.0/status"
           $response = Invoke-RestMethod -Uri $uri -TimeoutSec 30
           Write-Host "Application state: $($response.state)"
           if ($response.state -ne "Running") {
@@ -87,8 +87,8 @@ jobs:
             exit 1
           }
 
-      # Step 6 - Upload EAR as workflow artifact
-      - name: Upload EAR Artifact
+      # Step 6 - Upload EAR as artifact
+      - name: "Upload EAR as workflow artifact"
         uses: actions/upload-artifact@v4
         with:
           name: bw6-ear-${{ github.sha }}
@@ -97,24 +97,24 @@ jobs:
           retention-days: 7
 
   deploy-prod:
-    name: Deploy to PROD
+    name: "Deploy to PROD"
     needs: build-and-deploy-dev
     runs-on: self-hosted
     environment: prod
 
     steps:
-      - name: Pre-cleanup Git safe directory
+      - name: "Pre-cleanup Git safe directory"
         shell: pwsh
         run: |
           git config --global --add safe.directory '*'
 
-      - name: Checkout source
+      - name: "Checkout source"
         uses: actions/checkout@v4
         with:
           persist-credentials: false
           path: .
 
-      - name: Clear Maven cached resolution failures
+      - name: "Clear Maven cached resolution failures"
         shell: pwsh
         run: |
           $repoPath = "${{ env.MAVEN_REPO }}/com/tibco"
@@ -122,15 +122,15 @@ jobs:
             Get-ChildItem $repoPath -Recurse -Filter "*.lastUpdated" | Remove-Item -Force
           }
 
-      - name: Build EAR and Deploy to PROD
+      - name: "Build EAR and Deploy to PROD"
         shell: pwsh
         env:
           BW_PROFILE: WindowsProfileProd.substvar
           BWAGENT_HOST: guwdspwpvaidy01
           BWAGENT_PORT: 8079
-          BW_DOMAIN: DevDomain
-          BW_APPSPACE: DevAppSpace
-          BW_APPNODE: DevAppNode
+          BW_DOMAIN: ProdDomain
+          BW_APPSPACE: ProdAppSpace
+          BW_APPNODE: ProdAppNode
           BW_APPNODE_HTTP_PORT: 1530
           BW_DOC_API_PORT: 7777
         run: |
@@ -140,7 +140,7 @@ jobs:
             -U `
             --batch-mode `
             --no-transfer-progress `
-            -Dmaven.repo.local="$mvnRepo" `
+            "-Dmaven.repo.local=$mvnRepo" `
             -f 'tibco.bw.sample.binding.rest.Basic.application/pom.xml' `
             -DagentHost=$env:BWAGENT_HOST `
             -DagentPort=$env:BWAGENT_PORT `
@@ -155,10 +155,10 @@ jobs:
             "-Dprofile=$env:BW_PROFILE" `
             "-DappNodeConfig_bw.rest.docApi.port_value=$env:BW_DOC_API_PORT"
 
-      - name: Verify PROD application is Running
+      - name: "Verify PROD application is running"
         shell: pwsh
         run: |
-          $uri = "http://${{ env.BWAGENT_HOST }}:${{ env.BWAGENT_PORT }}/bw/v1/domains/${{ env.BW_DOMAIN }}/appspaces/${{ env.BW_APPSPACE }}/applications/tibco.bw.sample.binding.rest.Basic.application/1.0/status"
+          $uri = "http://$env:BWAGENT_HOST:$env:BWAGENT_PORT/bw/v1/domains/$env:BW_DOMAIN/appspaces/$env:BW_APPSPACE/applications/tibco.bw.sample.binding.rest.Basic.application/1.0/status"
           $response = Invoke-RestMethod -Uri $uri -TimeoutSec 30
           Write-Host "Application state: $($response.state)"
           if ($response.state -ne "Running") {
