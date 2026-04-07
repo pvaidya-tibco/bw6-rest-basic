@@ -8,7 +8,15 @@ on:
 
 env:
   TIBCO_HOME: C:\bw612
-  MAVEN_REPO: "C:/Users/pvaidya/.m2/repository"
+  MAVEN_REPO: C:/Users/pvaidya/.m2/repository
+  JAVA_HOME: C:\bw612\tibcojre64\17
+  BWAGENT_HOST: guwdspwpvaidy01
+  BWAGENT_PORT: 8079
+  BW_DOMAIN: DevDomain
+  BW_APPSPACE: DevAppSpace
+  BW_APPNODE: DevAppNode
+  BW_APPNODE_HTTP_PORT: 1530
+  BW_DOC_API_PORT: 7777
 
 jobs:
   build-and-deploy-dev:
@@ -17,17 +25,20 @@ jobs:
     environment: dev
 
     steps:
+      # Step 1 - Fix Git safe directory
       - name: "Step 1 - Pre-cleanup Git safe directory"
         shell: pwsh
         run: |
           git config --global --add safe.directory '*'
 
+      # Step 2 - Checkout repository
       - name: "Step 2 - Checkout source"
         uses: actions/checkout@v4
         with:
           persist-credentials: false
           path: .
 
+      # Step 3 - Clear Maven cached resolution failures
       - name: "Step 3 - Clear Maven cached resolution failures"
         shell: pwsh
         run: |
@@ -37,30 +48,20 @@ jobs:
             Write-Host "Cleared stale Maven cache markers in $repoPath"
           }
 
+      # Step 4 - Build EAR and Deploy to DEV
       - name: "Step 4 - Build EAR and Deploy to DEV"
         shell: pwsh
         env:
-          JAVA_HOME: C:\bw612\tibcojre64\17
           BW_PROFILE: WindowsProfileDev.substvar
-          BWAGENT_HOST: guwdspwpvaidy01
-          BWAGENT_PORT: 8079
-          BW_DOMAIN: DevDomain
-          BW_APPSPACE: DevAppSpace
-          BW_APPNODE: DevAppNode
-          BW_APPNODE_HTTP_PORT: 1530
-          BW_DOC_API_PORT: 7777
         run: |
           $env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
-
-          # Ensure Maven local repo is safely quoted
-          $mvnRepo = "`"$env:MAVEN_REPO`""
-
-          & "C:\apache-maven-3.9.8\bin\mvn.cmd" bw6:bwdeploy `
+          $mvnRepo = $env:MAVEN_REPO
+          & 'C:\apache-maven-3.9.8\bin\mvn.cmd' bw6:bwdeploy `
             -U `
             --batch-mode `
             --no-transfer-progress `
-            -Dmaven.repo.local=$mvnRepo `
-            -f tibco.bw.sample.binding.rest.Basic.application/pom.xml `
+            -Dmaven.repo.local='$mvnRepo' `
+            -f 'tibco.bw.sample.binding.rest.Basic.application/pom.xml' `
             -DagentHost=$env:BWAGENT_HOST `
             -DagentPort=$env:BWAGENT_PORT `
             -DagentSSL=false `
@@ -74,6 +75,7 @@ jobs:
             "-Dprofile=$env:BW_PROFILE" `
             "-DappNodeConfig_bw.rest.docApi.port_value=$env:BW_DOC_API_PORT"
 
+      # Step 5 - Verify DEV application is Running
       - name: "Step 5 - Verify DEV application is Running"
         shell: pwsh
         run: |
@@ -87,6 +89,7 @@ jobs:
             exit 1
           }
 
+      # Step 6 - Upload EAR as workflow artifact
       - name: "Step 6 - Upload EAR as workflow artifact"
         uses: actions/upload-artifact@v4
         with:
@@ -124,25 +127,16 @@ jobs:
       - name: "Step 4 - Build EAR and Deploy to PROD"
         shell: pwsh
         env:
-          JAVA_HOME: C:\bw612\tibcojre64\17
           BW_PROFILE: WindowsProfileProd.substvar
-          BWAGENT_HOST: guwdspwpvaidy01
-          BWAGENT_PORT: 8079
-          BW_DOMAIN: DevDomain
-          BW_APPSPACE: DevAppSpace
-          BW_APPNODE: DevAppNode
-          BW_APPNODE_HTTP_PORT: 1530
-          BW_DOC_API_PORT: 7777
         run: |
           $env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
-          $mvnRepo = "`"$env:MAVEN_REPO`""
-
-          & "C:\apache-maven-3.9.8\bin\mvn.cmd" bw6:bwdeploy `
+          $mvnRepo = $env:MAVEN_REPO
+          & 'C:\apache-maven-3.9.8\bin\mvn.cmd' bw6:bwdeploy `
             -U `
             --batch-mode `
             --no-transfer-progress `
-            -Dmaven.repo.local=$mvnRepo `
-            -f tibco.bw.sample.binding.rest.Basic.application/pom.xml `
+            -Dmaven.repo.local='$mvnRepo' `
+            -f 'tibco.bw.sample.binding.rest.Basic.application/pom.xml' `
             -DagentHost=$env:BWAGENT_HOST `
             -DagentPort=$env:BWAGENT_PORT `
             -DagentSSL=false `
