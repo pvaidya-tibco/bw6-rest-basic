@@ -20,14 +20,7 @@ jobs:
       - name: "Step 1 - Checkout source"
         uses: actions/checkout@v4
 
-      - name: "Step 2 - Clear Maven cached resolution failures"
-        shell: pwsh
-        run: |
-          Get-ChildItem "$env:USERPROFILE\.m2\repository\com\tibco" -Recurse -Filter "*.lastUpdated" | Remove-Item -Force
-          Get-ChildItem "$env:USERPROFILE\.m2\repository\com\tibco" -Recurse -Filter "_remote.repositories" | Remove-Item -Force
-          Write-Host "Cleared stale Maven cache markers"
-
-      - name: "Step 3 - Build EAR and Deploy to DEV"
+      - name: "Step 2 - Build EAR and Deploy to DEV"
         shell: pwsh
         env:
           JAVA_HOME: C:\bw612\tibcojre64\17
@@ -36,7 +29,6 @@ jobs:
           & "C:\apache-maven-3.9.8\bin\mvn.cmd" bw6:bwdeploy `
             --batch-mode `
             --no-transfer-progress `
-            -U `
             -f tibco.bw.sample.binding.rest.Basic.application/pom.xml `
             -DagentHost="${{ vars.BWAGENT_HOST }}" `
             -DagentPort="${{ vars.BWAGENT_PORT }}" `
@@ -48,10 +40,10 @@ jobs:
             -DhttpPort="${{ vars.BW_APPNODE_HTTP_PORT }}" `
             -Dredeploy=true `
             -DrestartAppNode=false `
-            "-Dprofile=WindowsProfileDev.substvar" `
+            "-Dprofile=WindowsProfile.substvar" `
             "-DappNodeConfig_bw.rest.docApi.port_value=${{ vars.BW_DOC_API_PORT }}"
 
-      - name: "Step 4 - Verify DEV application is Running"
+      - name: "Step 3 - Verify DEV application is Running"
         shell: pwsh
         run: |
           $uri = "http://${{ vars.BWAGENT_HOST }}:${{ vars.BWAGENT_PORT }}/bw/v1/domains/${{ vars.BW_DOMAIN }}/appspaces/${{ vars.BW_APPSPACE }}/applications/tibco.bw.sample.binding.rest.Basic.application/1.0/status"
@@ -60,11 +52,11 @@ jobs:
           if ($response.state -eq "Running") {
             Write-Host "Application is Running"
           } else {
-            Write-Error "Application NOT in Running state: $($response.state)"
+            Write-Error "Application NOT in Running state. Current state: $($response.state)"
             exit 1
           }
 
-      - name: "Step 5 - Upload EAR as workflow artifact"
+      - name: "Step 4 - Upload EAR as workflow artifact"
         uses: actions/upload-artifact@v4
         with:
           name: bw6-ear-${{ github.sha }}
@@ -83,20 +75,8 @@ jobs:
 
       - name: "Step 1 - Checkout source"
         uses: actions/checkout@v4
-        
-      - name: "Step 2 - Configure Maven to use user local repository"
-        shell: pwsh
-        run: |
-          $settingsDir = "$env:USERPROFILE\.m2"
-          New-Item -ItemType Directory -Force -Path $settingsDir | Out-Null
-          @"
-           <settings>
-           <localRepository>C:/Users/pvaidya/.m2/repository</localRepository>
-           </settings>
-          "@ | Set-Content "$settingsDir\settings.xml"
-          Write-Host "Maven settings.xml written, localRepository set to C:/Users/pvaidya/.m2/repository"
 
-      - name: "Step 3 - Build EAR and Deploy to PROD"
+      - name: "Step 2 - Build EAR and Deploy to PROD"
         shell: pwsh
         env:
           JAVA_HOME: C:\bw612\tibcojre64\17
@@ -105,7 +85,6 @@ jobs:
           & "C:\apache-maven-3.9.8\bin\mvn.cmd" bw6:bwdeploy `
             --batch-mode `
             --no-transfer-progress `
-            -U `
             -f tibco.bw.sample.binding.rest.Basic.application/pom.xml `
             -DagentHost="${{ vars.BWAGENT_HOST }}" `
             -DagentPort="${{ vars.BWAGENT_PORT }}" `
@@ -117,10 +96,10 @@ jobs:
             -DhttpPort="${{ vars.BW_APPNODE_HTTP_PORT }}" `
             -Dredeploy=true `
             -DrestartAppNode=true `
-            "-Dprofile=WindowsProfileProd.substvar" `
+            "-Dprofile=WindowsProfile.substvar" `
             "-DappNodeConfig_bw.rest.docApi.port_value=${{ vars.BW_DOC_API_PORT }}"
 
-      - name: "Step 4 - Verify PROD application is Running"
+      - name: "Step 3 - Verify PROD application is Running"
         shell: pwsh
         run: |
           $uri = "http://${{ vars.BWAGENT_HOST }}:${{ vars.BWAGENT_PORT }}/bw/v1/domains/${{ vars.BW_DOMAIN }}/appspaces/${{ vars.BW_APPSPACE }}/applications/tibco.bw.sample.binding.rest.Basic.application/1.0/status"
@@ -129,6 +108,6 @@ jobs:
           if ($response.state -eq "Running") {
             Write-Host "PROD Application is Running"
           } else {
-            Write-Error "PROD Application NOT in Running state: $($response.state)"
+            Write-Error "PROD Application NOT in Running state. Current state: $($response.state)"
             exit 1
           }
