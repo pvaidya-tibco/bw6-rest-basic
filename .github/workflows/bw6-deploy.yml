@@ -1,101 +1,106 @@
-build-and-deploy-dev:
-  name: "Build + Deploy to DEV"
-  runs-on: self-hosted
-  environment: dev
+name: BW6 Build and Deploy
 
-  steps:
-    # Step 0 - Debug runner user and environment variables
-    - name: "Debug: Runner and Env Variables"
-      shell: pwsh
-      run: |
-        Write-Host "Runner user: $(whoami)"
-        Write-Host "TIBCO_HOME: $env:TIBCO_HOME"
-        Write-Host "MAVEN_REPO: $env:MAVEN_REPO"
-        Write-Host "BWAGENT_HOST: $env:BWAGENT_HOST"
-        Write-Host "BWAGENT_PORT: $env:BWAGENT_PORT"
-        Write-Host "BW_DOMAIN: $env:BW_DOMAIN"
-        Write-Host "BW_APPSPACE: $env:BW_APPSPACE"
-        Write-Host "BW_APPNODE: $env:BW_APPNODE"
-        Write-Host "BW_APPNODE_HTTP_PORT: $env:BW_APPNODE_HTTP_PORT"
-        Write-Host "BW_DOC_API_PORT: $env:BW_DOC_API_PORT"
-        # Optional: check JAR exists in local repo
-        $jarPath = "$env:MAVEN_REPO/com/tibco/security/com.tibco.security.tibcrypt.eclipse/2.19.400.001/com.tibco.security.tibcrypt.eclipse-2.19.400.001.jar"
-        if (Test-Path $jarPath) {
-          Write-Host "TIBCO JAR found: $jarPath"
-        } else {
-          Write-Error "TIBCO JAR missing: $jarPath"
-        }
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
 
-    # Step 1 - Pre-cleanup Git safe directory
-    - name: "Step 1 - Pre-cleanup Git safe directory"
-      shell: pwsh
-      run: |
-        git config --global --add safe.directory '*'
+env:
+  TIBCO_HOME: C:\bw612
+  MAVEN_REPO: C:/Users/pvaidya/.m2/repository
 
-    # Step 2 - Checkout repository
-    - name: "Step 2 - Checkout source"
-      uses: actions/checkout@v4
-      with:
-        persist-credentials: false
-        path: .
+jobs:
+  build-and-deploy-dev:
+    name: "Build + Deploy to DEV"
+    runs-on: self-hosted
+    environment: dev
 
-    # Step 3 - Clear Maven cached resolution failures
-    - name: "Step 3 - Clear Maven cached resolution failures"
-      shell: pwsh
-      run: |
-        $repoPath = "$env:MAVEN_REPO/com/tibco"
-        if (Test-Path $repoPath) {
-          Get-ChildItem $repoPath -Recurse -Filter "*.lastUpdated" | Remove-Item -Force
-          Write-Host "Cleared stale Maven cache markers in $repoPath"
-        }
+    steps:
+      - name: "Debug: Runner and Env Variables"
+        shell: pwsh
+        run: |
+          Write-Host "Runner user: $(whoami)"
+          Write-Host "TIBCO_HOME: $env:TIBCO_HOME"
+          Write-Host "MAVEN_REPO: $env:MAVEN_REPO"
+          Write-Host "BWAGENT_HOST: $env:BWAGENT_HOST"
+          Write-Host "BWAGENT_PORT: $env:BWAGENT_PORT"
+          Write-Host "BW_DOMAIN: $env:BW_DOMAIN"
+          Write-Host "BW_APPSPACE: $env:BW_APPSPACE"
+          Write-Host "BW_APPNODE: $env:BW_APPNODE"
+          Write-Host "BW_APPNODE_HTTP_PORT: $env:BW_APPNODE_HTTP_PORT"
+          Write-Host "BW_DOC_API_PORT: $env:BW_DOC_API_PORT"
+          $jarPath = "$env:MAVEN_REPO/com/tibco/security/com.tibco.security.tibcrypt.eclipse/2.19.400.001/com.tibco.security.tibcrypt.eclipse-2.19.400.001.jar"
+          if (Test-Path $jarPath) {
+            Write-Host "TIBCO JAR found: $jarPath"
+          } else {
+            Write-Error "TIBCO JAR missing: $jarPath"
+          }
 
-    # Step 4 - Build EAR and Deploy to DEV
-    - name: "Step 4 - Build EAR and Deploy to DEV"
-      shell: pwsh
-      env:
-        JAVA_HOME: C:\bw612\tibcojre64\17
-      run: |
-        $env:PATH = "C:\bw612\tibcojre64\17\bin;$env:PATH"
-        $mvnCmd = "C:\apache-maven-3.9.8\bin\mvn.cmd"
-        $pom = "tibco.bw.sample.binding.rest.Basic.application/pom.xml"
-        & $mvnCmd bw6:bwdeploy `
-          -U `
-          --batch-mode `
-          --no-transfer-progress `
-          "-Dmaven.repo.local=$env:MAVEN_REPO" `
-          -f $pom `
-          "-DagentHost=$env:BWAGENT_HOST" `
-          "-DagentPort=$env:BWAGENT_PORT" `
-          "-DagentSSL=false" `
-          "-DdeployToAdmin=true" `
-          "-Ddomain=$env:BW_DOMAIN" `
-          "-DappSpace=$env:BW_APPSPACE" `
-          "-DappNode=$env:BW_APPNODE" `
-          "-DhttpPort=$env:BW_APPNODE_HTTP_PORT" `
-          "-Dredeploy=true" `
-          "-DrestartAppNode=false" `
-          "-Dprofile=WindowsProfile.substvar" `
-          "-DappNodeConfig_bw.rest.docApi.port_value=$env:BW_DOC_API_PORT"
+      - name: "Step 1 - Pre-cleanup Git safe directory"
+        shell: pwsh
+        run: |
+          git config --global --add safe.directory '*'
 
-    # Step 5 - Verify DEV application is Running
-    - name: "Step 5 - Verify DEV application is Running"
-      shell: pwsh
-      run: |
-        $uri = "http://$env:BWAGENT_HOST:$env:BWAGENT_PORT/bw/v1/domains/$env:BW_DOMAIN/appspaces/$env:BW_APPSPACE/applications/tibco.bw.sample.binding.rest.Basic.application/1.0/status"
-        $response = Invoke-RestMethod -Uri $uri -TimeoutSec 30
-        Write-Host "Application state: $($response.state)"
-        if ($response.state -eq "Running") {
-          Write-Host "Application is Running"
-        } else {
-          Write-Error "Application NOT in Running state. Current state: $($response.state)"
-          exit 1
-        }
+      - name: "Step 2 - Checkout source"
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+          path: .
 
-    # Step 6 - Upload EAR as workflow artifact
-    - name: "Step 6 - Upload EAR as workflow artifact"
-      uses: actions/upload-artifact@v4
-      with:
-        name: bw6-ear-${{ github.sha }}
-        path: tibco.bw.sample.binding.rest.Basic.application/target/*.ear
-        if-no-files-found: error
-        retention-days: 7
+      - name: "Step 3 - Clear Maven cached resolution failures"
+        shell: pwsh
+        run: |
+          $repoPath = "$env:MAVEN_REPO/com/tibco"
+          if (Test-Path $repoPath) {
+            Get-ChildItem $repoPath -Recurse -Filter "*.lastUpdated" | Remove-Item -Force
+            Write-Host "Cleared stale Maven cache markers in $repoPath"
+          }
+
+      - name: "Step 4 - Build EAR and Deploy to DEV"
+        shell: pwsh
+        env:
+          JAVA_HOME: C:\bw612\tibcojre64\17
+        run: |
+          $env:PATH = "C:\bw612\tibcojre64\17\bin;$env:PATH"
+          $mvnCmd = "C:\apache-maven-3.9.8\bin\mvn.cmd"
+          $pom = "tibco.bw.sample.binding.rest.Basic.application/pom.xml"
+          & $mvnCmd bw6:bwdeploy `
+            -U `
+            --batch-mode `
+            --no-transfer-progress `
+            "-Dmaven.repo.local=$env:MAVEN_REPO" `
+            -f $pom `
+            "-DagentHost=$env:BWAGENT_HOST" `
+            "-DagentPort=$env:BWAGENT_PORT" `
+            "-DagentSSL=false" `
+            "-DdeployToAdmin=true" `
+            "-Ddomain=$env:BW_DOMAIN" `
+            "-DappSpace=$env:BW_APPSPACE" `
+            "-DappNode=$env:BW_APPNODE" `
+            "-DhttpPort=$env:BW_APPNODE_HTTP_PORT" `
+            "-Dredeploy=true" `
+            "-DrestartAppNode=false" `
+            "-Dprofile=WindowsProfile.substvar" `
+            "-DappNodeConfig_bw.rest.docApi.port_value=$env:BW_DOC_API_PORT"
+
+      - name: "Step 5 - Verify DEV application is Running"
+        shell: pwsh
+        run: |
+          $uri = "http://$env:BWAGENT_HOST:$env:BWAGENT_PORT/bw/v1/domains/$env:BW_DOMAIN/appspaces/$env:BW_APPSPACE/applications/tibco.bw.sample.binding.rest.Basic.application/1.0/status"
+          $response = Invoke-RestMethod -Uri $uri -TimeoutSec 30
+          Write-Host "Application state: $($response.state)"
+          if ($response.state -eq "Running") {
+            Write-Host "Application is Running"
+          } else {
+            Write-Error "Application NOT in Running state. Current state: $($response.state)"
+            exit 1
+          }
+
+      - name: "Step 6 - Upload EAR as workflow artifact"
+        uses: actions/upload-artifact@v4
+        with:
+          name: bw6-ear-${{ github.sha }}
+          path: tibco.bw.sample.binding.rest.Basic.application/target/*.ear
+          if-no-files-found: error
+          retention-days: 7
