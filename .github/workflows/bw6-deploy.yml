@@ -8,7 +8,7 @@ on:
 
 env:
   TIBCO_HOME: C:\bw612
-  MAVEN_REPO: "C:/Users/pvaidya/.m2/repository"  # Existing Maven repo
+  MAVEN_REPO: C:/Users/pvaidya/.m2/repository  # Existing Maven repo
 
 jobs:
   build-and-deploy-dev:
@@ -60,22 +60,24 @@ jobs:
           JAVA_HOME: C:\bw612\tibcojre64\17
         run: |
           $env:PATH = "C:\bw612\tibcojre64\17\bin;$env:PATH"
-          & "C:\apache-maven-3.9.8\bin\mvn.cmd" bw6:bwdeploy `
+          $mvnCmd = "C:\apache-maven-3.9.8\bin\mvn.cmd"
+          $pom = "tibco.bw.sample.binding.rest.Basic.application/pom.xml"
+          & $mvnCmd bw6:bwdeploy `
             -U `
             --batch-mode `
             --no-transfer-progress `
-            -Dmaven.repo.local=$env:MAVEN_REPO `
-            -f tibco.bw.sample.binding.rest.Basic.application/pom.xml `
-            -DagentHost=$env:BWAGENT_HOST `
-            -DagentPort=$env:BWAGENT_PORT `
-            -DagentSSL=false `
-            -DdeployToAdmin=true `
-            -Ddomain=$env:BW_DOMAIN `
-            -DappSpace=$env:BW_APPSPACE `
-            -DappNode=$env:BW_APPNODE `
-            -DhttpPort=$env:BW_APPNODE_HTTP_PORT `
-            -Dredeploy=true `
-            -DrestartAppNode=false `
+            "-Dmaven.repo.local=$env:MAVEN_REPO" `
+            -f $pom `
+            "-DagentHost=$env:BWAGENT_HOST" `
+            "-DagentPort=$env:BWAGENT_PORT" `
+            "-DagentSSL=false" `
+            "-DdeployToAdmin=true" `
+            "-Ddomain=$env:BW_DOMAIN" `
+            "-DappSpace=$env:BW_APPSPACE" `
+            "-DappNode=$env:BW_APPNODE" `
+            "-DhttpPort=$env:BW_APPNODE_HTTP_PORT" `
+            "-Dredeploy=true" `
+            "-DrestartAppNode=false" `
             "-Dprofile=WindowsProfile.substvar" `
             "-DappNodeConfig_bw.rest.docApi.port_value=$env:BW_DOC_API_PORT"
 
