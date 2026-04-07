@@ -53,30 +53,30 @@ jobs:
           $env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
           $mvnRepo = $env:MAVEN_REPO
 
-          # Convert to Int and Trim to ensure no string metadata or whitespace remains
+          # Convert to Int and Trim to ensure clean numeric values
           $agentPort = [int]"$env:BWAGENT_PORT".Trim()
           $httpPort  = [int]"$env:BW_APPNODE_HTTP_PORT".Trim()
           $docApiPort = [int]"$env:BW_DOC_API_PORT".Trim()
 
-          # Note: Removed quotes from port -D arguments to ensure Maven treats them as Integers
+          # Using double quotes around the entire property string to prevent "Unknown lifecycle phase"
           & 'C:\apache-maven-3.9.8\bin\mvn.cmd' bw6:bwdeploy `
             -U `
             --batch-mode `
             --no-transfer-progress `
             "-Dmaven.repo.local=$mvnRepo" `
             -f 'tibco.bw.sample.binding.rest.Basic.application/pom.xml' `
-            -DagentHost=$env:BWAGENT_HOST `
-            -DagentPort=$agentPort `
+            "-DagentHost=$env:BWAGENT_HOST" `
+            "-DagentPort=$agentPort" `
             -DagentSSL=false `
             -DdeployToAdmin=true `
-            -Ddomain=$env:BW_DOMAIN `
-            -DappSpace=$env:BW_APPSPACE `
-            -DappNode=$env:BW_APPNODE `
-            -DhttpPort=$httpPort `
+            "-Ddomain=$env:BW_DOMAIN" `
+            "-DappSpace=$env:BW_APPSPACE" `
+            "-DappNode=$env:BW_APPNODE" `
+            "-DhttpPort=$httpPort" `
             -Dredeploy=true `
             -DrestartAppNode=false `
             "-Dprofile=$env:BW_PROFILE" `
-            -DappNodeConfig_bw.rest.docApi.port_value=$docApiPort
+            "-DappNodeConfig_bw.rest.docApi.port_value=$docApiPort"
 
       - name: "Step 5 - Verify DEV application is Running"
         shell: pwsh
@@ -140,7 +140,6 @@ jobs:
           $env:PATH = "$env:JAVA_HOME\bin;$env:PATH"
           $mvnRepo = $env:MAVEN_REPO
 
-          # Convert to Int and Trim for PROD
           $agentPort = [int]"$env:BWAGENT_PORT".Trim()
           $httpPort  = [int]"$env:BW_APPNODE_HTTP_PORT".Trim()
           $docApiPort = [int]"$env:BW_DOC_API_PORT".Trim()
@@ -151,18 +150,18 @@ jobs:
             --no-transfer-progress `
             "-Dmaven.repo.local=$mvnRepo" `
             -f 'tibco.bw.sample.binding.rest.Basic.application/pom.xml' `
-            -DagentHost=$env:BWAGENT_HOST `
-            -DagentPort=$agentPort `
+            "-DagentHost=$env:BWAGENT_HOST" `
+            "-DagentPort=$agentPort" `
             -DagentSSL=false `
             -DdeployToAdmin=true `
-            -Ddomain=$env:BW_DOMAIN `
-            -DappSpace=$env:BW_APPSPACE `
-            -DappNode=$env:BW_APPNODE `
-            -DhttpPort=$httpPort `
+            "-Ddomain=$env:BW_DOMAIN" `
+            "-DappSpace=$env:BW_APPSPACE" `
+            "-DappNode=$env:BW_APPNODE" `
+            "-DhttpPort=$httpPort" `
             -Dredeploy=true `
             -DrestartAppNode=true `
             "-Dprofile=$env:BW_PROFILE" `
-            -DappNodeConfig_bw.rest.docApi.port_value=$docApiPort
+            "-DappNodeConfig_bw.rest.docApi.port_value=$docApiPort"
 
       - name: "Step 5 - Verify PROD application is Running"
         shell: pwsh
