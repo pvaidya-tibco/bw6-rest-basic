@@ -9,7 +9,7 @@ on:
 env:
   TIBCO_HOME: C:\bw612
   # Explicitly define the Maven Local Repo path to avoid "Unknown packaging: bwear"
-  MAVEN_REPO: "C:\Users\pvaidya\.m2\repository"
+  MAVEN_REPO: "C:/Users/pvaidya/.m2/repository"
 
 jobs:
   build-and-deploy-dev:
