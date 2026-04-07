@@ -1,13 +1,3 @@
-name: BW6 Build and Deploy
-
-on:
-  push:
-    branches: [main]
-  workflow_dispatch:
-
-env:
-  TIBCO_HOME: C:\bw612
-
 jobs:
 
   build-and-deploy-dev:
@@ -17,17 +7,21 @@ jobs:
 
     steps:
 
-      # Step 1 - Checkout repository safely
-      - name: "Step 1 - Checkout source safely"
+      # Step 1 - Checkout repository
+      - name: "Step 1 - Checkout source"
         uses: actions/checkout@v4
         with:
           persist-credentials: false
           path: .
+
+      # Step 2 - Mark Git repo as safe
+      - name: "Step 2 - Mark Git repo as safe"
+        shell: pwsh
         run: |
           git config --global --add safe.directory "${{ github.workspace }}"
 
-      # Step 2 - Build EAR and Deploy to DEV
-      - name: "Step 2 - Build EAR and Deploy to DEV"
+      # Step 3 - Build EAR and Deploy to DEV
+      - name: "Step 3 - Build EAR and Deploy to DEV"
         shell: pwsh
         env:
           JAVA_HOME: C:\bw612\tibcojre64\17
@@ -50,8 +44,8 @@ jobs:
             "-Dprofile=WindowsProfile.substvar" `
             "-DappNodeConfig_bw.rest.docApi.port_value=${{ vars.BW_DOC_API_PORT }}"
 
-      # Step 3 - Verify DEV application is Running
-      - name: "Step 3 - Verify DEV application is Running"
+      # Step 4 - Verify DEV application is Running
+      - name: "Step 4 - Verify DEV application is Running"
         shell: pwsh
         run: |
           $uri = "http://${{ vars.BWAGENT_HOST }}:${{ vars.BWAGENT_PORT }}/bw/v1/domains/${{ vars.BW_DOMAIN }}/appspaces/${{ vars.BW_APPSPACE }}/applications/tibco.bw.sample.binding.rest.Basic.application/1.0/status"
@@ -62,17 +56,15 @@ jobs:
           } else {
             Write-Error "Application NOT in Running state. Current state: $($response.state)"
             exit 1
-          }
 
-      # Step 4 - Upload EAR as workflow artifact
-      - name: "Step 4 - Upload EAR as workflow artifact"
+      # Step 5 - Upload EAR as workflow artifact
+      - name: "Step 5 - Upload EAR as workflow artifact"
         uses: actions/upload-artifact@v4
         with:
           name: bw6-ear-${{ github.sha }}
           path: tibco.bw.sample.binding.rest.Basic.application/target/*.ear
           if-no-files-found: error
           retention-days: 7
-
 
   deploy-prod:
     name: "Deploy to PROD"
@@ -82,17 +74,21 @@ jobs:
 
     steps:
 
-      # Step 1 - Checkout repository safely
-      - name: "Step 1 - Checkout source safely"
+      # Step 1 - Checkout repository
+      - name: "Step 1 - Checkout source"
         uses: actions/checkout@v4
         with:
           persist-credentials: false
           path: .
+
+      # Step 2 - Mark Git repo as safe
+      - name: "Step 2 - Mark Git repo as safe"
+        shell: pwsh
         run: |
           git config --global --add safe.directory "${{ github.workspace }}"
 
-      # Step 2 - Build EAR and Deploy to PROD
-      - name: "Step 2 - Build EAR and Deploy to PROD"
+      # Step 3 - Build EAR and Deploy to PROD
+      - name: "Step 3 - Build EAR and Deploy to PROD"
         shell: pwsh
         env:
           JAVA_HOME: C:\bw612\tibcojre64\17
@@ -115,8 +111,8 @@ jobs:
             "-Dprofile=WindowsProfile.substvar" `
             "-DappNodeConfig_bw.rest.docApi.port_value=${{ vars.BW_DOC_API_PORT }}"
 
-      # Step 3 - Verify PROD application is Running
-      - name: "Step 3 - Verify PROD application is Running"
+      # Step 4 - Verify PROD application is Running
+      - name: "Step 4 - Verify PROD application is Running"
         shell: pwsh
         run: |
           $uri = "http://${{ vars.BWAGENT_HOST }}:${{ vars.BWAGENT_PORT }}/bw/v1/domains/${{ vars.BW_DOMAIN }}/appspaces/${{ vars.BW_APPSPACE }}/applications/tibco.bw.sample.binding.rest.Basic.application/1.0/status"
