@@ -8,6 +8,8 @@ on:
 
 env:
   TIBCO_HOME: C:\bw612
+  # Explicitly define the Maven Local Repo path to avoid "Unknown packaging: bwear"
+  MAVEN_REPO: "C:\Users\pvaidya\.m2\repository"
 
 jobs:
   build-and-deploy-dev:
@@ -17,7 +19,6 @@ jobs:
 
     steps:
       # Step 1 - Fix Git Ownership BEFORE Checkout
-      # This prevents the "dubious ownership" error by trusting the workspace path globally.
       - name: "Step 1 - Pre-cleanup Git safe directory"
         shell: pwsh
         run: |
@@ -40,6 +41,7 @@ jobs:
           & "C:\apache-maven-3.9.8\bin\mvn.cmd" bw6:bwdeploy `
             --batch-mode `
             --no-transfer-progress `
+            -Dmaven.repo.local="${{ env.MAVEN_REPO }}" `
             -f tibco.bw.sample.binding.rest.Basic.application/pom.xml `
             -DagentHost="${{ vars.BWAGENT_HOST }}" `
             -DagentPort="${{ vars.BWAGENT_PORT }}" `
@@ -107,6 +109,7 @@ jobs:
           & "C:\apache-maven-3.9.8\bin\mvn.cmd" bw6:bwdeploy `
             --batch-mode `
             --no-transfer-progress `
+            -Dmaven.repo.local="${{ env.MAVEN_REPO }}" `
             -f tibco.bw.sample.binding.rest.Basic.application/pom.xml `
             -DagentHost="${{ vars.BWAGENT_HOST }}" `
             -DagentPort="${{ vars.BWAGENT_PORT }}" `
