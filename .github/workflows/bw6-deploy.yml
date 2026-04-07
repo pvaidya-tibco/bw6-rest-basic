@@ -8,8 +8,7 @@ on:
 
 env:
   TIBCO_HOME: C:\bw612
-  # Use forward slashes to avoid YAML escaping issues
-  MAVEN_REPO: "C:/Users/pvaidya/.m2/repository"
+  MAVEN_REPO: "C:/Users/pvaidya/.m2/repository"  # Use your existing Maven repo
 
 jobs:
   build-and-deploy-dev:
@@ -18,7 +17,20 @@ jobs:
     environment: dev
 
     steps:
-      # Step 1 - Fix Git Ownership BEFORE Checkout
+      # Step 0 - Debug runner user and repo path
+      - name: "Debug: Runner user and local Maven repo"
+        shell: pwsh
+        run: |
+          Write-Host "Runner user:"
+          whoami
+          Write-Host "Checking Maven repo path: $env:MAVEN_REPO"
+          if (Test-Path $env:MAVEN_REPO) {
+            Get-ChildItem -Recurse "$env:MAVEN_REPO/com/tibco/security/com.tibco.security.tibcrypt.eclipse/2.19.400.001"
+          } else {
+            Write-Error "Maven repo path does not exist!"
+          }
+
+      # Step 1 - Pre-cleanup Git safe directory
       - name: "Step 1 - Pre-cleanup Git safe directory"
         shell: pwsh
         run: |
@@ -32,11 +44,10 @@ jobs:
           path: .
 
       # Step 3 - Clear Maven cached resolution failures
-      # This deletes .lastUpdated files that cause "was not found during a previous attempt" errors
       - name: "Step 3 - Clear Maven cached resolution failures"
         shell: pwsh
         run: |
-          $repoPath = "${{ env.MAVEN_REPO }}/com/tibco"
+          $repoPath = "$env:MAVEN_REPO/com/tibco"
           if (Test-Path $repoPath) {
             Get-ChildItem $repoPath -Recurse -Filter "*.lastUpdated" | Remove-Item -Force
             Write-Host "Cleared stale Maven cache markers in $repoPath"
@@ -53,7 +64,7 @@ jobs:
             -U `
             --batch-mode `
             --no-transfer-progress `
-            -Dmaven.repo.local="${{ env.MAVEN_REPO }}" `
+            -Dmaven.repo.local="$env:MAVEN_REPO" `
             -f tibco.bw.sample.binding.rest.Basic.application/pom.xml `
             -DagentHost="${{ vars.BWAGENT_HOST }}" `
             -DagentPort="${{ vars.BWAGENT_PORT }}" `
@@ -90,67 +101,3 @@ jobs:
           path: tibco.bw.sample.binding.rest.Basic.application/target/*.ear
           if-no-files-found: error
           retention-days: 7
-
-  deploy-prod:
-    name: "Deploy to PROD"
-    needs: build-and-deploy-dev
-    runs-on: self-hosted
-    environment: prod
-
-    steps:
-      - name: "Step 1 - Pre-cleanup Git safe directory"
-        shell: pwsh
-        run: |
-          git config --global --add safe.directory '*'
-
-      - name: "Step 2 - Checkout source"
-        uses: actions/checkout@v4
-        with:
-          persist-credentials: false
-          path: .
-
-      - name: "Step 3 - Clear Maven cached resolution failures"
-        shell: pwsh
-        run: |
-          $repoPath = "${{ env.MAVEN_REPO }}/com/tibco"
-          if (Test-Path $repoPath) {
-            Get-ChildItem $repoPath -Recurse -Filter "*.lastUpdated" | Remove-Item -Force
-          }
-
-      - name: "Step 4 - Build EAR and Deploy to PROD"
-        shell: pwsh
-        env:
-          JAVA_HOME: C:\bw612\tibcojre64\17
-        run: |
-          $env:PATH = "C:\bw612\tibcojre64\17\bin;$env:PATH"
-          & "C:\apache-maven-3.9.8\bin\mvn.cmd" bw6:bwdeploy `
-            -U `
-            --batch-mode `
-            --no-transfer-progress `
-            -Dmaven.repo.local="${{ env.MAVEN_REPO }}" `
-            -f tibco.bw.sample.binding.rest.Basic.application/pom.xml `
-            -DagentHost="${{ vars.BWAGENT_HOST }}" `
-            -DagentPort="${{ vars.BWAGENT_PORT }}" `
-            -DagentSSL=false `
-            -DdeployToAdmin=true `
-            -Ddomain="${{ vars.BW_DOMAIN }}" `
-            -DappSpace="${{ vars.BW_APPSPACE }}" `
-            -DappNode="${{ vars.BW_APPNODE }}" `
-            -DhttpPort="${{ vars.BW_APPNODE_HTTP_PORT }}" `
-            -Dredeploy=true `
-            -DrestartAppNode=true `
-            "-Dprofile=WindowsProfile.substvar" `
-            "-DappNodeConfig_bw.rest.docApi.port_value=${{ vars.BW_DOC_API_PORT }}"
-
-      - name: "Step 5 - Verify PROD application is Running"
-        shell: pwsh
-        run: |
-          $uri = "http://${{ vars.BWAGENT_HOST }}:${{ vars.BWAGENT_PORT }}/bw/v1/domains/${{ vars.BW_DOMAIN }}/appspaces/${{ vars.BW_APPSPACE }}/applications/tibco.bw.sample.binding.rest.Basic.application/1.0/status"
-          $response = Invoke-RestMethod -Uri $uri -TimeoutSec 30
-          Write-Host "Application state: $($response.state)"
-          if ($response.state -eq "Running") {
-            Write-Host "PROD Application is Running"
-          } else {
-            Write-Error "PROD Application NOT in Running state. Current state: $($response.state)"
-            exit 1
-          }
