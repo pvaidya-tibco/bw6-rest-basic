@@ -93,7 +93,7 @@ jobs:
             exit 1
           }
 
-      # Step 6 - Upload EAR as workflow artifact
+      # Step 6 - Upload EAR  as workflow artifact
       - name: "Step 6 - Upload EAR as workflow artifact"
         uses: actions/upload-artifact@v4
         with:
