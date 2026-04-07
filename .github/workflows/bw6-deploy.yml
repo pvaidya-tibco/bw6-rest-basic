@@ -83,13 +83,18 @@ jobs:
 
       - name: "Step 1 - Checkout source"
         uses: actions/checkout@v4
-
-      - name: "Step 2 - Clear Maven cached resolution failures"
+        
+      - name: "Step 2 - Configure Maven to use pvaidya local repository"
         shell: pwsh
         run: |
-          Get-ChildItem "$env:USERPROFILE\.m2\repository\com\tibco" -Recurse -Filter "*.lastUpdated" | Remove-Item -Force
-          Get-ChildItem "$env:USERPROFILE\.m2\repository\com\tibco" -Recurse -Filter "_remote.repositories" | Remove-Item -Force
-          Write-Host "Cleared stale Maven cache markers"
+          $settingsDir = "$env:USERPROFILE\.m2"
+          New-Item -ItemType Directory -Force -Path $settingsDir | Out-Null
+          @"
+           <settings>
+           <localRepository>C:/Users/pvaidya/.m2/repository</localRepository>
+           </settings>
+          "@ | Set-Content "$settingsDir\settings.xml"
+          Write-Host "Maven settings.xml written, localRepository set to C:/Users/pvaidya/.m2/repository"
 
       - name: "Step 3 - Build EAR and Deploy to PROD"
         shell: pwsh
