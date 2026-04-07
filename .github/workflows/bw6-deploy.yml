@@ -15,7 +15,7 @@ jobs:
   build-and-deploy-dev:
     name: "Build + Deploy to DEV"
     runs-on: self-hosted
-    environment: dev
+    environment: dev  # Pulls variables from the 'dev' environment
 
     steps:
       - name: "Step 1 - Pre-cleanup Git safe directory"
@@ -34,6 +34,7 @@ jobs:
           if (Test-Path $repoPath) {
             Get-ChildItem $repoPath -Recurse -Filter "*.lastUpdated" | Remove-Item -Force
           }
+          Write-Host "Cleared stale Maven cache markers in $repoPath"
 
       - name: "Step 4 - Build EAR and Deploy to DEV"
         shell: pwsh
@@ -65,23 +66,27 @@ jobs:
         shell: pwsh
         run: |
           $uri = "http://${{ vars.BWAGENT_HOST }}:${{ vars.BWAGENT_PORT }}/bw/v1/domains/${{ vars.BW_DOMAIN }}/appspaces/${{ vars.BW_APPSPACE }}/applications/tibco.bw.sample.binding.rest.Basic.application/1.0/status"
+          Write-Host "Checking URI: $uri"
           $response = Invoke-RestMethod -Uri $uri -TimeoutSec 30
           Write-Host "Application state: $($response.state)"
           if ($response.state -eq "Running") {
-            Write-Host "Application is Running"
+            Write-Host "DEV Application is Running"
           } else {
-            Write-Error "Application NOT in Running state. Current state: $($response.state)"
+            Write-Error "DEV Application NOT in Running state. Current state: $($response.state)"
             exit 1
           }
 
       - name: "Step 6 - Upload EAR"
         uses: actions/upload-artifact@v4
         with:
-          name: bw6-ear-${{ github.sha }}
+          name: bw6-ear-${{ github.run_id }}-dev
           path: tibco.bw.sample.binding.rest.Basic.application/target/*.ear
+          if-no-files-found: warn
+          compression-level: 6
+          overwrite: true
 
   deploy-prod:
-    name: "Deploy to PROD"
+    name: "Deploy to PROD (same as DEV)"
     needs: build-and-deploy-dev
     runs-on: self-hosted
     environment: prod
@@ -103,6 +108,7 @@ jobs:
           if (Test-Path $repoPath) {
             Get-ChildItem $repoPath -Recurse -Filter "*.lastUpdated" | Remove-Item -Force
           }
+          Write-Host "Cleared stale Maven cache markers in $repoPath"
 
       - name: "Step 4 - Build EAR and Deploy to PROD"
         shell: pwsh
@@ -134,6 +140,7 @@ jobs:
         shell: pwsh
         run: |
           $uri = "http://${{ vars.BWAGENT_HOST }}:${{ vars.BWAGENT_PORT }}/bw/v1/domains/${{ vars.BW_DOMAIN }}/appspaces/${{ vars.BW_APPSPACE }}/applications/tibco.bw.sample.binding.rest.Basic.application/1.0/status"
+          Write-Host "Checking URI: $uri"
           $response = Invoke-RestMethod -Uri $uri -TimeoutSec 30
           Write-Host "Application state: $($response.state)"
           if ($response.state -eq "Running") {
@@ -146,5 +153,8 @@ jobs:
       - name: "Step 6 - Upload EAR"
         uses: actions/upload-artifact@v4
         with:
-          name: bw6-ear-${{ github.sha }}
+          name: bw6-ear-${{ github.run_id }}-prod
           path: tibco.bw.sample.binding.rest.Basic.application/target/*.ear
+          if-no-files-found: warn
+          compression-level: 6
+          overwrite: true
