@@ -43,7 +43,7 @@ jobs:
             "-Dprofile=WindowsProfile.substvar" `
             "-DappNodeConfig_bw.rest.docApi.port_value=${{ vars.BW_DOC_API_PORT }}"
 
-      - name: "Step 3 - Verify DEV application is Running"
+      - name: "Step 3 - Verify DEV BW6 application is Running"
         shell: pwsh
         run: |
           $uri = "http://${{ vars.BWAGENT_HOST }}:${{ vars.BWAGENT_PORT }}/bw/v1/domains/${{ vars.BW_DOMAIN }}/appspaces/${{ vars.BW_APPSPACE }}/applications/tibco.bw.sample.binding.rest.Basic.application/1.0/status"
